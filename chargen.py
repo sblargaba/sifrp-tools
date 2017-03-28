@@ -47,7 +47,7 @@ def set_age(roll=roller(3)):
 
 
 def age_to_val(age):
-    if age:
+    if age is not None:
         if 0 <= age < 10:
             age = 0
         elif 10 <= age < 14:
@@ -123,24 +123,24 @@ class Character:
     max_benefits = [3, 3, 3, 3, 3, 2, 1, 0]
     max_rank = [4, 4, 5, 7, 6, 5, 5, 5]
 
-    def __init__(self, data=None):
+    def __init__(self, name, data=None, age=None):
+        self.name = name
         if data:
             self.data = data
             self.ageVal = age_to_val(data["Background"]["Age"])
             self.statusVal = self.get_rank("Status")
         else:
-            self.ageVal = None
-            self.statusVal = None
+            self.ageVal = age_to_val(age)
             self.data = {
                 "Armor": None,
                 "Arms": None,
-                "Background": self.generate_bg(),
+                "Background": self.generate_bg(self.ageVal),
                 "Abilities": self.generate_abilities(),
                 "Attributes": self.generate_attributes()
             }
 
     def generate_bg(self, age=None, status=None, goal=None, motivation=None, virtue=None, vice=None, backgrounds=None):
-        self.ageVal = age_to_val(age) if age else set_age()
+        self.ageVal = age if age is not None else set_age()
         self.statusVal = status if status else set_status()
         bg = {
             "Age": str(self.ages[self.ageVal]), "Status": str(self.status[self.statusVal]),
@@ -201,7 +201,9 @@ class Character:
         }
         return der
 
-    # def __str__(self):
+    def __str__(self):
+        out = {self.name: self.data}
+        return dump(out, default_flow_style=False)
     #     res = "Age:\t\t" + str(self.ages[self.ageVal])
     #     res += "\nStatus:\t\t" + str(self.status[self.statusVal])
     #     res += "\nGoal:\t\t" + self.goal
@@ -283,24 +285,25 @@ class Character:
         self.data["Attributes"].update(self.get_derivated())
 
 
-parser = ArgumentParser()
-parser.add_argument("--file", default=None)
-parser.add_argument("--age", default=None, type=int)
-args = parser.parse_args()
+parser = ArgumentParser(
+    description="Generates a character.\n If a character is supplied as a file, validate the character"
+)
+parser.add_argument("-f", "--file", default=None, help="A properly formatted YAML file containing a character")
+parser.add_argument("-a", "--age", default=None, type=int, help="The age of the character to be created")
+parser.add_argument("-n", "--name", default="Ser Example", help="The name of the character to be created")
 
-if args.age:
-    args.age = age_to_val(args.age)
+args = parser.parse_args()
 
 if args.file:
     with open(args.file) as f:
         raw = load(f)
     name, data = raw.popitem()
-    char = Character(data)
+    char = Character(name=name, data=data)
     char.validate()
     raw = {name: char.data}
     with open("/tmp/test.yml", "w") as f:
-        f.write(dump(raw, default_flow_style=False))
+        f.write(str(char))
 else:
-    char = Character()
-    print(dump(char.data, default_flow_style=False))
+    char = Character(name=args.name, age=args.age)
+    print(char)
 
