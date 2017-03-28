@@ -1,0 +1,26 @@
+Name:
+  Abilities:
+    List: p56
+    Status: 
+      Stats: p68
+      Specialties: p51
+  Attributes:
+    Destiny Points: 3
+    Benefits: {p51, p73}
+    Drawbacks: {p51, p94}
+    Combat Defense: Agility + Athletics + Awareness
+    Health: 3 * Endurance
+    Intrigue Defense: Cunning + Status + Awareness
+    Composture: 3 * Will
+  Armor: null
+  Arms: null
+  Background:
+    Age: 45
+    Goal: Love
+    Motivation: Lust
+    Virtue: Honest
+    Vice: Licentious
+    Events:
+      - A list
+      - Of eventful
+      - Events

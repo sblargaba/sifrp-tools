@@ -1,0 +1,44 @@
+Ser Example:
+  Abilities:
+    Agility: 3
+    Awareness: 5
+    Animal Handling:
+      Stat: 3
+      Ride: 3
+    Athletics: 3
+    Deception:
+      Stat: 2
+      Act: 2
+    Endurance: 3
+    Fighting:
+      Stat: 4
+      Long Blades: 3
+    Warfare: 3
+    Cunning: 3
+    Persuasion:
+      Stat: 4
+      Charm: 2
+    Status: 4
+  Attributes:
+    Destiny Points: 3
+    Benefits: {}
+    Drawbacks:
+      Flaws:
+        - Agility
+    Combat Defense: 11
+    Health: 9
+    Intrigue Defense: 12
+    Composture: 6
+  Armor: null
+  Arms: null
+  Background:
+    Age: 45
+    Goal: Love
+    Motivation: Lust
+    Virtue: Honest
+    Vice: Licentious
+    Events:
+      - You were kidnapped and escaped, were ransomed, or rescued.
+      - You kept the company of a famous individual.
+      - You fought or were involved in a battle.
+      - You had a torrid love affair.
