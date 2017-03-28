@@ -168,10 +168,6 @@ class Character:
 
     def generate_attributes(self):
         attributes = {
-            "Combat Defense": self.get_rank("Agility") + self.get_rank("Athletics") + self.get_rank("Awareness"),
-            "Health": 3 * self.get_rank("Endurance"),
-            "Intrigue Defense": self.get_rank("Cunning") + self.get_rank("Status") + self.get_rank("Awareness"),
-            "Composture": 3 * self.get_rank("Will"),
             "Destiny Points": self.get_dp(),
             "Benefits": {
                 "max": self.max_benefits[self.ageVal],
@@ -182,6 +178,7 @@ class Character:
                 "list": "p94"
             }
         }
+        attributes.update(self.get_derivated())
         return attributes
 
     def get_rank(self, ability):
@@ -194,6 +191,15 @@ class Character:
             return a
         else:
             return a["Stat"]
+
+    def get_derivated(self):
+        der = {
+            "Combat Defense": self.get_rank("Agility") + self.get_rank("Athletics") + self.get_rank("Awareness"),
+            "Health": 3 * self.get_rank("Endurance"),
+            "Intrigue Defense": self.get_rank("Cunning") + self.get_rank("Status") + self.get_rank("Awareness"),
+            "Composture": 3 * self.get_rank("Will")
+        }
+        return der
 
     # def __str__(self):
     #     res = "Age:\t\t" + str(self.ages[self.ageVal])
@@ -220,13 +226,22 @@ class Character:
 
     def validate(self):
         self.validate_abilities()
-        self.validate_destiny()
+        self.validate_attributes()
 
     def get_flaws(self):
         try:
             return self.data["Attributes"]["Drawbacks"]["Flaws"]
         except KeyError:
             return []
+
+    def get_traits_n(self, trait):
+        total = 0
+        for db in self.data["Attributes"][trait].values():
+            if type(db) is list:
+                total += len(db)
+            else:
+                total += 1
+        return total
 
     def validate_abilities(self):
         total = self.exp_points[self.ageVal]
@@ -244,16 +259,7 @@ class Character:
                 ))
         print("Experience: starting {}, left: {}".format(self.exp_points[self.ageVal], total))
 
-    def get_traits_n(self, trait):
-        total = 0
-        for db in self.data["Attributes"][trait].values():
-            if type(db) is list:
-                total += len(db)
-            else:
-                total += 1
-        return total
-
-    def validate_destiny(self):
+    def validate_attributes(self):
         db_n = self.get_traits_n("Drawbacks")
         if db_n < self.min_drawbacks[self.ageVal]:
             print("{} Drawbacks, expected min {}".format(
@@ -273,6 +279,8 @@ class Character:
         print("Destiny points: {} initial - {} benefits + {} drawbacks = {}".format(
             self.get_dp(), ben_n, db_bought, dp
         ))
+
+        self.data["Attributes"].update(self.get_derivated())
 
 
 parser = ArgumentParser()
