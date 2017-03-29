@@ -47,53 +47,51 @@ def set_age(roll=roller(3)):
 
 
 def age_to_val(age):
-    if age is not None:
-        if 0 <= age < 10:
-            age = 0
-        elif 10 <= age < 14:
-            age = 1
-        elif 14 <= age < 18:
-            age = 2
-        elif 18 <= age < 30:
-            age = 3
-        elif 30 <= age < 50:
-            age = 4
-        elif 50 <= age < 70:
-            age = 5
-        elif 70 <= age < 80:
-            age = 6
-        elif 80 <= age:
-            age = 7
-    return age
+    if 0 <= age < 10:
+        return 0
+    elif 10 <= age < 14:
+        return 1
+    elif 14 <= age < 18:
+        return 2
+    elif 18 <= age < 30:
+        return 3
+    elif 30 <= age < 50:
+        return 4
+    elif 50 <= age < 70:
+        return 5
+    elif 70 <= age < 80:
+        return 6
+    elif 80 <= age:
+        return 7
 
 
 class Character:
-    status = [
+    _status = [
         "House retainer, common hedge knight, freeman",
         "Sworn sword, guardsman, squire",
         "Ranking member of household, maester, junior septon, landed knight, noble bastard",
         "Banner lord, ward, courtier, septon, advisor",
         "Lord of the house, heir, lady, offspring"
     ]
-    goals = [
+    _goals = [
         "Enlightenment", "Skill, mastery in a specific ability",
         "Fame", "Knowledge", "Love", "Power", "Security", "Revenge", "Wealth",
         "Justice", "Good"
     ]
-    motivations = [
+    _motivations = [
         "Charity", "Duty", "Fear", "Greed", "Love", "Hatred",
         "Lust", "Peace", "Stability", "Excellence", "Madness"
     ]
-    virtues = [
+    _virtues = [
         "Charitable", "Chaste", "Courageous", "Devoted", "Honest",
         "Humble", "Just", "Magnanimous", "Merciful", "Pious", "Wise"
     ]
-    vices = [
+    _vices = [
         "Ambitious/Grasping", "Arrogant", "Avaricious", "Cowardly",
         "Cruel", "Foolish", "Licentious", "Miserly", "Prejudiced", "Scheming",
         "Wrathful"
     ]
-    backgrounds = [
+    _backgrounds = [
         "You served another house (page, sworn sword).",
         "You had a torrid love affair.",
         "You fought or were involved in a battle.",
@@ -124,35 +122,113 @@ class Character:
     max_rank = [4, 4, 5, 7, 6, 5, 5, 5]
 
     def __init__(self, name, data=None, age=None):
+        """
+        Args:
+            name (str): The name of the character.
+            data (dict): A dictionary containing a character data.
+            age (int): When generating a random character set the age.
+        """
         self.name = name
         if data:
             self.data = data
             self.ageVal = age_to_val(data["Background"]["Age"])
             self.statusVal = self.get_rank("Status")
         else:
-            self.ageVal = age_to_val(age)
+            self.ageVal = age_to_val(age) if age is not None else set_age()
+            self.statusVal = set_status()
             self.data = {
                 "Armor": None,
                 "Arms": None,
-                "Background": self.generate_bg(self.ageVal),
+                "Background": self.generate_bg(),
                 "Abilities": self.generate_abilities(),
                 "Attributes": self.generate_attributes()
             }
 
-    def generate_bg(self, age=None, status=None, goal=None, motivation=None, virtue=None, vice=None, backgrounds=None):
-        self.ageVal = age if age is not None else set_age()
-        self.statusVal = status if status else set_status()
+    def __str__(self):
+        out = {self.name: self.data}
+        return dump(out, default_flow_style=False)
+
+    def get_rank(self, ability):
+        """Get the rank of a specified ability
+
+        Args:
+            ability (str): The ability to retrieve
+
+        Returns:
+            int: the ablity rank. Defaults to 2 if the ability is not listed
+
+        """
+        try:
+            a = self.data["Abilities"][ability]
+        except (KeyError, AttributeError):
+            return 2
+
+        if type(a) == int:
+            return a
+        else:
+            return a["Stat"]
+
+    def get_derived(self):
+        """Calculate the derived statistics (Combat/Intrigue Defense, Health, Composture)
+
+        Returns:
+            dict: A dictionary containig the derived statistics
+        """
+        der = {
+            "Combat Defense": self.get_rank("Agility") + self.get_rank("Athletics") + self.get_rank("Awareness"),
+            "Health": 3 * self.get_rank("Endurance"),
+            "Intrigue Defense": self.get_rank("Cunning") + self.get_rank("Status") + self.get_rank("Awareness"),
+            "Composture": 3 * self.get_rank("Will")
+        }
+        return der
+
+    def get_dp(self):
+        """Calculate the destiny points"""
+        return 7 - self.ageVal
+
+    def get_traits_n(self, trait):
+        """Get the number of traits
+
+        Args:
+            trait (str): Defines the traits to check, either "Drawbacks" or "Benefit"
+
+        Returns:
+            int: The number of traits 
+        """
+        total = 0
+        for db in self.data["Attributes"][trait].values():
+            if type(db) is list:
+                total += len(db)
+            else:
+                total += 1
+        return total
+
+    def generate_bg(self):
         bg = {
-            "Age": str(self.ages[self.ageVal]), "Status": str(self.status[self.statusVal]),
-            "Goal": goal if goal else self.goals[roller(2) - 2],
-            "Motivation": motivation if motivation else self.motivations[roller(2) - 2],
-            "Virtue": virtue if virtue else self.virtues[roller(2) - 2],
-            "Vice": vice if vice else self.vices[roller(2) - 2],
-            "Events": backgrounds if backgrounds else self.generate_backgrounds()
+            "Age": str(self.ages[self.ageVal]), "Status": str(self._status[self.statusVal]),
+            "Goal": self._goals[roller(2) - 2],
+            "Motivation": self._motivations[roller(2) - 2],
+            "Virtue": self._virtues[roller(2) - 2],
+            "Vice": self._vices[roller(2) - 2],
+            "Events": self.generate_events()
         }
         return bg
 
+    def generate_events(self):
+        """Generate background events
+
+        Returns:
+            list of str: A list of all the events
+        """
+        events = []
+        while len(events) < self.ageVal:
+            event = roller(2) - 2
+            if self._backgrounds[event] not in events:
+                events.append(self._backgrounds[event])
+        return events
+
     def generate_abilities(self):
+        """Generate the ability and specialities points available to spend and handbook pages"""
         status_exp = self.statusVal * 30 - 20
 
         abilities = {
@@ -167,6 +243,7 @@ class Character:
         return abilities
 
     def generate_attributes(self):
+        """Generates the available destiny points, max benefits and min drawbacks. Update the derived statistics"""
         attributes = {
             "Destiny Points": self.get_dp(),
             "Benefits": {
@@ -178,76 +255,32 @@ class Character:
                 "list": "p94"
             }
         }
-        attributes.update(self.get_derivated())
+        attributes.update(self.get_derived())
         return attributes
 
-    def get_rank(self, ability):
-        try:
-            a = self.data["Abilities"][ability]
-        except (KeyError, AttributeError):
-            return 2
-
-        if type(a) == int:
-            return a
-        else:
-            return a["Stat"]
-
-    def get_derivated(self):
-        der = {
-            "Combat Defense": self.get_rank("Agility") + self.get_rank("Athletics") + self.get_rank("Awareness"),
-            "Health": 3 * self.get_rank("Endurance"),
-            "Intrigue Defense": self.get_rank("Cunning") + self.get_rank("Status") + self.get_rank("Awareness"),
-            "Composture": 3 * self.get_rank("Will")
-        }
-        return der
-
-    def __str__(self):
-        out = {self.name: self.data}
-        return dump(out, default_flow_style=False)
-    #     res = "Age:\t\t" + str(self.ages[self.ageVal])
-    #     res += "\nStatus:\t\t" + str(self.status[self.statusVal])
-    #     res += "\nGoal:\t\t" + self.goal
-    #     res += "\nMotivation:\t" + self.motivation
-    #     res += "\nVirtue:\t" + self.virtue
-    #     res += "\nVice:\t\t" + self.vice
-    #     res += "\nEvents:"
-    #     for bg in self.backgrounds:
-    #         res += "\n\t" + bg
-    #     return res
-
-    def get_dp(self):
-        return 7 - self.ageVal
-
-    def generate_backgrounds(self):
-        events = []
-        while len(events) < self.ageVal:
-            event = roller(2) - 2
-            if self.backgrounds[event] not in events:
-                events.append(self.backgrounds[event])
-        return events
-
     def validate(self):
-        self.validate_abilities()
-        self.validate_attributes()
-
-    def get_flaws(self):
-        try:
-            return self.data["Attributes"]["Drawbacks"]["Flaws"]
-        except KeyError:
-            return []
-
-    def get_traits_n(self, trait):
-        total = 0
-        for db in self.data["Attributes"][trait].values():
-            if type(db) is list:
-                total += len(db)
-            else:
-                total += 1
-        return total
+        """Checks if the character ha the correct values and updates the derived statistics"""
+        legal = self.validate_abilities() and self.validate_attributes()
+        self.data["Attributes"].update(self.get_derived())
+        return legal
 
     def validate_abilities(self):
+        """Check if the abilities are correct.
+        
+        For each ability the method checks the rank does not exceeds the maximum allowed for the caracter.
+        The method also calculates the amount of experience needed for the character's abilities.
+        The output of the check is printed on the screen; flaws are taken into consideration when perofrming checks.
+        
+        Returns:
+            bool: True if none of the checks fails
+        """
+        legal = True
         total = self.exp_points[self.ageVal]
-        flaws = self.get_flaws()
+        try:
+            flaws = self.data["Attributes"]["Drawbacks"]["Flaws"]
+        except KeyError:
+            flaws = []
+
         for ab in self.data["Abilities"]:
             rank = self.get_rank(ab)
             if ab in flaws:
@@ -259,21 +292,37 @@ class Character:
                 print("{} at {} exceeds the maximum value of {} for the age".format(
                     ab, rank, self.max_rank[self.ageVal]
                 ))
+                legal = False
         print("Experience: starting {}, left: {}".format(self.exp_points[self.ageVal], total))
+        if total < 0:
+            legal = False
+
+        return legal
 
     def validate_attributes(self):
+        """Checks attributes and destiny points
+        
+        The methods checks if the character has at least the required number of drawbacks and less the maximum
+        benefits allowed
+        
+        Returns:
+            bool: True if none of the checks fails        
+        """
+        legal = True
         db_n = self.get_traits_n("Drawbacks")
         if db_n < self.min_drawbacks[self.ageVal]:
             print("{} Drawbacks, expected min {}".format(
                 db_n,
                 self.min_drawbacks[self.ageVal]
             ))
+            legal = False
         ben_n = self.get_traits_n("Benefits")
         if ben_n > self.max_benefits[self.ageVal]:
             print("{} Benefits, expected max {}".format(
                 ben_n,
                 self.max_benefits[self.ageVal]
             ))
+            legal = False
 
         db_bought = db_n - self.min_drawbacks[self.ageVal]
 
@@ -281,8 +330,10 @@ class Character:
         print("Destiny points: {} initial - {} benefits + {} drawbacks = {}".format(
             self.get_dp(), ben_n, db_bought, dp
         ))
+        if dp < 0:
+            legal = False
 
-        self.data["Attributes"].update(self.get_derivated())
+        return legal
 
 
 parser = ArgumentParser(
