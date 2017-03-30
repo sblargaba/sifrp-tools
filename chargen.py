@@ -1,15 +1,80 @@
 #!/bin/env python
 
-from random import randint
-from argparse import ArgumentParser
-from yaml import load, dump
+import random
+import yaml
+
+statuses = [
+    "House retainer, common hedge knight, freeman",
+    "Sworn sword, guardsman, squire",
+    "Ranking member of household, maester, junior septon, landed knight, noble bastard",
+    "Banner lord, ward, courtier, septon, advisor",
+    "Lord of the house, heir, lady, offspring"
+]
+
+goals = [
+    "Enlightenment", "Skill, mastery in a specific ability",
+    "Fame", "Knowledge", "Love", "Power", "Security", "Revenge", "Wealth",
+    "Justice", "Good"
+]
+
+motivations = [
+    "Charity", "Duty", "Fear", "Greed", "Love", "Hatred",
+    "Lust", "Peace", "Stability", "Excellence", "Madness"
+]
+
+virtues = [
+    "Charitable", "Chaste", "Courageous", "Devoted", "Honest",
+    "Humble", "Just", "Magnanimous", "Merciful", "Pious", "Wise"
+]
+
+vices = [
+    "Ambitious/Grasping", "Arrogant", "Avaricious", "Cowardly",
+    "Cruel", "Foolish", "Licentious", "Miserly", "Prejudiced", "Scheming",
+    "Wrathful"
+]
+
+backgrounds = [
+    "You served another house (page, sworn sword).",
+    "You had a torrid love affair.",
+    "You fought or were involved in a battle.",
+    "You were kidnapped and escaped, were ransomed, or rescued.",
+    "You traveled across the narrow sea for a time.",
+    "You achieved a significant deed, maybe saving the life of your lord, "
+    "killed a giant boar, and so on.",
+    "You kept the company of a famous individual.",
+    "You were present at a significant tournament (competing or watching).",
+    "You were involved in a villainous scandal.",
+    "You were falsely accused of wrongdoing.",
+    "You were held hostage by another house as a ward or prisoner."
+]
+
+ages = [
+    ("0-9", "Youth"),
+    ("10-13", "Adolescent"),
+    ("14-18", "Young Adult"),
+    ("18-30", "Adult"),
+    ("30-50", "Middle Age"),
+    ("50-70", "Old"),
+    ("70-80", "Very Old"),
+    ("80+", "Venerable")
+]
+
+exp_points = [120, 150, 180, 210, 240, 270, 330, 360]
+
+spec_points = [40, 40, 60, 80, 100, 160, 200, 240]
+
+min_drawbacks = [0, 0, 0, 1, 1, 2, 3, 4]
+
+max_benefits = [3, 3, 3, 3, 3, 2, 1, 0]
+
+ability_max_rank = [4, 4, 5, 7, 6, 5, 5, 5]
 
 
 def roller(n):
     """Rolls nd6"""
     res = 0
     for i in range(n):
-        res += randint(1, 6)
+        res += random.randint(1, 6)
     return res
 
 
@@ -66,68 +131,78 @@ def age_to_val(age):
 
 
 class Character:
-    _status = [
-        "House retainer, common hedge knight, freeman",
-        "Sworn sword, guardsman, squire",
-        "Ranking member of household, maester, junior septon, landed knight, noble bastard",
-        "Banner lord, ward, courtier, septon, advisor",
-        "Lord of the house, heir, lady, offspring"
-    ]
-    _goals = [
-        "Enlightenment", "Skill, mastery in a specific ability",
-        "Fame", "Knowledge", "Love", "Power", "Security", "Revenge", "Wealth",
-        "Justice", "Good"
-    ]
-    _motivations = [
-        "Charity", "Duty", "Fear", "Greed", "Love", "Hatred",
-        "Lust", "Peace", "Stability", "Excellence", "Madness"
-    ]
-    _virtues = [
-        "Charitable", "Chaste", "Courageous", "Devoted", "Honest",
-        "Humble", "Just", "Magnanimous", "Merciful", "Pious", "Wise"
-    ]
-    _vices = [
-        "Ambitious/Grasping", "Arrogant", "Avaricious", "Cowardly",
-        "Cruel", "Foolish", "Licentious", "Miserly", "Prejudiced", "Scheming",
-        "Wrathful"
-    ]
-    _backgrounds = [
-        "You served another house (page, sworn sword).",
-        "You had a torrid love affair.",
-        "You fought or were involved in a battle.",
-        "You were kidnapped and escaped, were ransomed, or rescued.",
-        "You traveled across the narrow sea for a time.",
-        "You achieved a significant deed, maybe saving the life of your lord, "
-        "killed a giant boar, and so on.",
-        "You kept the company of a famous individual.",
-        "You were present at a significant tournament (competing or watching).",
-        "You were involved in a villainous scandal.",
-        "You were falsely accused of wrongdoing.",
-        "You were held hostage by another house as a ward or prisoner."
-    ]
-    ages = [
-        ("0-9", "Youth"),
-        ("10-13", "Adolescent"),
-        ("14-18", "Young Adult"),
-        ("18-30", "Adult"),
-        ("30-50", "Middle Age"),
-        ("50-70", "Old"),
-        ("70-80", "Very Old"),
-        ("80+", "Venerable")
-    ]
-    exp_points = [120, 150, 180, 210, 240, 270, 330, 360]
-    spec_points = [40, 40, 60, 80, 100, 160, 200, 240]
-    min_drawbacks = [0, 0, 0, 1, 1, 2, 3, 4]
-    max_benefits = [3, 3, 3, 3, 3, 2, 1, 0]
-    max_rank = [4, 4, 5, 7, 6, 5, 5, 5]
+    """The Character class
+    
+    This class represents a character and provides methods for character generation and validation.
+    On class creation if a dictionary with the character data is not provided, the informations are randomly generated.
+    
+    Random generations includes:
+    
+        - Age (this can be overridden providing the proper argument on class creation)
+        - Status
+        - Goal
+        - Motivation
+        - Virtue
+        - Vice
+        - Events
+    
+    The following data is calculated based on the age of the character:
+    
+        - Ability points (The points necesary to buy Status are already subtracted from this)
+        - Specialty points
+        - Minumum drawbacks
+        - Maximum benefits
+    
+    Pages of the core rulebook are are included for convenience.
+    
+    Args:
+        name (str): The name of the character.
+        age (int): When generating a random character set the age.
+        data (dict): A dictionary containing a character data. Example::
+    
+            data = {
+                "Abilities": {
+                    ability_name: ability_rank (int),
+                    ability_name: {
+                        "Stat": ability_rank (int),
+                        specialty_name: specialty_rank (int)
+                    }
+                },
+                "Attributes": {
+                    "Destiny Points": (int),
+                    "Benefits": {
+                        benefit_name: benefit_description (str),
+                        benefit_name: [
+                            benefit_application (str)
+                        ]
+                    },
+                    "Drawbacks": {
+                        drawback_name: drawback_description (str),
+                        drawback_name: [
+                            drawback_application (str)
+                        ]
+                    "Combat Defense": (int)
+                    "Health": (int)
+                    "Intrigue Defense": (int)
+                    "Composture": (int)
+                    }
+                },
+                "Background":{
+                    "Age": (int),
+                    "Goal": (str),
+                    "Motivation": (str),
+                    "Virtue": (str),
+                    "Vice": (str),
+                    "Events": [
+                        event (str)
+                    ]
+                },
+                "Armor": (list),
+                "Arms": (list)
+            }
+    """
 
-    def __init__(self, name, data=None, age=None):
-        """
-        Args:
-            name (str): The name of the character.
-            data (dict): A dictionary containing a character data.
-            age (int): When generating a random character set the age.
-        """
+    def __init__(self, name="Ser Example", data=None, age=None):
         self.name = name
         if data:
             self.data = data
@@ -146,7 +221,7 @@ class Character:
 
     def __str__(self):
         out = {self.name: self.data}
-        return dump(out, default_flow_style=False)
+        return yaml.dump(out, default_flow_style=False)
 
     def get_rank(self, ability):
         """Get the rank of a specified ability
@@ -205,11 +280,12 @@ class Character:
 
     def generate_bg(self):
         bg = {
-            "Age": str(self.ages[self.ageVal]), "Status": str(self._status[self.statusVal]),
-            "Goal": self._goals[roller(2) - 2],
-            "Motivation": self._motivations[roller(2) - 2],
-            "Virtue": self._virtues[roller(2) - 2],
-            "Vice": self._vices[roller(2) - 2],
+            "Age": str(ages[self.ageVal]),
+            "Status": statuses[self.statusVal],
+            "Goal": goals[roller(2) - 2],
+            "Motivation": motivations[roller(2) - 2],
+            "Virtue": virtues[roller(2) - 2],
+            "Vice": vices[roller(2) - 2],
             "Events": self.generate_events()
         }
         return bg
@@ -223,8 +299,8 @@ class Character:
         events = []
         while len(events) < self.ageVal:
             event = roller(2) - 2
-            if self._backgrounds[event] not in events:
-                events.append(self._backgrounds[event])
+            if backgrounds[event] not in events:
+                events.append(backgrounds[event])
         return events
 
     def generate_abilities(self):
@@ -234,10 +310,10 @@ class Character:
         abilities = {
             "Abilities List": "p56",
             "Abilities Costs": "p50",
-            "Abilities Points": self.exp_points[self.ageVal] - status_exp,
+            "Abilities Points": exp_points[self.ageVal] - status_exp,
             "Status": {
               "Stat": self.statusVal + 2,
-              "Specialties points": self.spec_points[self.ageVal]
+              "Specialties points": spec_points[self.ageVal]
             }
         }
         return abilities
@@ -247,11 +323,11 @@ class Character:
         attributes = {
             "Destiny Points": self.get_dp(),
             "Benefits": {
-                "max": self.max_benefits[self.ageVal],
+                "max": max_benefits[self.ageVal],
                 "list": "p73"
             },
             "Drawbacks": {
-                "min": self.min_drawbacks[self.ageVal],
+                "min": min_drawbacks[self.ageVal],
                 "list": "p94"
             }
         }
@@ -275,7 +351,7 @@ class Character:
             bool: True if none of the checks fails
         """
         legal = True
-        total = self.exp_points[self.ageVal]
+        total = exp_points[self.ageVal]
         try:
             flaws = self.data["Attributes"]["Drawbacks"]["Flaws"]
         except KeyError:
@@ -288,12 +364,12 @@ class Character:
             if rank > 2:
                 print("{}: {} exp {}".format(ab, rank, (rank - 2) * 30 - 20))
                 total -= (rank - 2) * 30 - 20
-            if rank > self.max_rank[self.ageVal]:
+            if rank > ability_max_rank[self.ageVal]:
                 print("{} at {} exceeds the maximum value of {} for the age".format(
-                    ab, rank, self.max_rank[self.ageVal]
+                    ab, rank, ability_max_rank[self.ageVal]
                 ))
                 legal = False
-        print("Experience: starting {}, left: {}".format(self.exp_points[self.ageVal], total))
+        print("Experience: starting {}, left: {}".format(exp_points[self.ageVal], total))
         if total < 0:
             legal = False
 
@@ -310,21 +386,21 @@ class Character:
         """
         legal = True
         db_n = self.get_traits_n("Drawbacks")
-        if db_n < self.min_drawbacks[self.ageVal]:
+        if db_n < min_drawbacks[self.ageVal]:
             print("{} Drawbacks, expected min {}".format(
                 db_n,
-                self.min_drawbacks[self.ageVal]
+                min_drawbacks[self.ageVal]
             ))
             legal = False
         ben_n = self.get_traits_n("Benefits")
-        if ben_n > self.max_benefits[self.ageVal]:
+        if ben_n > max_benefits[self.ageVal]:
             print("{} Benefits, expected max {}".format(
                 ben_n,
-                self.max_benefits[self.ageVal]
+                max_benefits[self.ageVal]
             ))
             legal = False
 
-        db_bought = db_n - self.min_drawbacks[self.ageVal]
+        db_bought = db_n - min_drawbacks[self.ageVal]
 
         dp = self.get_dp() - ben_n + db_bought
         print("Destiny points: {} initial - {} benefits + {} drawbacks = {}".format(
@@ -334,27 +410,3 @@ class Character:
             legal = False
 
         return legal
-
-
-parser = ArgumentParser(
-    description="Generates a character.\n If a character is supplied as a file, validate the character"
-)
-parser.add_argument("-f", "--file", default=None, help="A properly formatted YAML file containing a character")
-parser.add_argument("-a", "--age", default=None, type=int, help="The age of the character to be created")
-parser.add_argument("-n", "--name", default="Ser Example", help="The name of the character to be created")
-
-args = parser.parse_args()
-
-if args.file:
-    with open(args.file) as f:
-        raw = load(f)
-    name, data = raw.popitem()
-    char = Character(name=name, data=data)
-    char.validate()
-    raw = {name: char.data}
-    with open("/tmp/test.yml", "w") as f:
-        f.write(str(char))
-else:
-    char = Character(name=args.name, age=args.age)
-    print(char)
-
