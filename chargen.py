@@ -136,9 +136,11 @@ class Character:
     This class represents a character and provides methods for character generation and validation.
     On class creation if a dictionary with the character data is not provided, the informations are randomly generated.
     
-    Random generations includes:
+    **Character Generation**
     
-        - Age (this can be overridden providing the proper argument on class creation)
+    The following data is genearated randomly:
+
+        - Age (can be overridden providing the proper argument on class creation)
         - Status
         - Goal
         - Motivation
@@ -207,15 +209,13 @@ class Character:
         if data:
             self.data = data
             self.ageVal = age_to_val(data["Background"]["Age"])
-            self.statusVal = self.get_rank("Status")
         else:
             self.ageVal = age_to_val(age) if age is not None else set_age()
-            self.statusVal = set_status()
             self.data = {
                 "Armor": None,
                 "Arms": None,
-                "Background": self.generate_bg(),
                 "Abilities": self.generate_abilities(),
+                "Background": self.generate_bg(),
                 "Attributes": self.generate_attributes()
             }
 
@@ -279,9 +279,11 @@ class Character:
         return total
 
     def generate_bg(self):
+        """Random generation of background informations"""
+        status = self.data["Abilities"]["Status"]
         bg = {
             "Age": str(ages[self.ageVal]),
-            "Status": statuses[self.statusVal],
+            "Status": statuses[status - 2],
             "Goal": goals[roller(2) - 2],
             "Motivation": motivations[roller(2) - 2],
             "Virtue": virtues[roller(2) - 2],
@@ -291,11 +293,7 @@ class Character:
         return bg
 
     def generate_events(self):
-        """Generate background events
-
-        Returns:
-            list of str: A list of all the events
-        """
+        """Generate a list of background events"""
         events = []
         while len(events) < self.ageVal:
             event = roller(2) - 2
@@ -305,14 +303,14 @@ class Character:
 
     def generate_abilities(self):
         """Generate the ability and specialities points available to spend and handbook pages"""
-        status_exp = self.statusVal * 30 - 20
-
+        status = set_status()
+        status_exp = (status - 2) * 30 - 20
         abilities = {
             "Abilities List": "p56",
             "Abilities Costs": "p50",
             "Abilities Points": exp_points[self.ageVal] - status_exp,
             "Status": {
-              "Stat": self.statusVal + 2,
+              "Stat": status,
               "Specialties points": spec_points[self.ageVal]
             }
         }
