@@ -60,16 +60,6 @@ ages = [
     ("80+", "Venerable")
 ]
 
-ab_points = [120, 150, 180, 210, 240, 270, 330, 360]
-
-spec_points = [40, 40, 60, 80, 100, 160, 200, 240]
-
-min_drawbacks = [0, 0, 0, 1, 1, 2, 3, 4]
-
-max_benefits = [3, 3, 3, 3, 3, 2, 1, 0]
-
-ab_max_rank = [4, 4, 5, 7, 6, 5, 5, 5]
-
 
 def roller(n):
     """Rolls nd6"""
@@ -285,6 +275,12 @@ class Character:
 
 
 class PlayerCharacter(Character):
+    ab_points = [120, 150, 180, 210, 240, 270, 330, 360]
+    spec_points = [40, 40, 60, 80, 100, 160, 200, 240]
+    min_drawbacks = [0, 0, 0, 1, 1, 2, 3, 4]
+    max_benefits = [3, 3, 3, 3, 3, 2, 1, 0]
+    ab_max_rank = [4, 4, 5, 7, 6, 5, 5, 5]
+
     def __init__(self, name="Ser Example", data=None, age=None):
         super().__init__(name, data, age)
         self.data["Backgrounds"] = self.generate_bg()
@@ -297,8 +293,8 @@ class PlayerCharacter(Character):
             "Abilities List": "p56",
             "Abilities Costs": "p50",
             "Specialties Costs": "p51",
-            "Abilities Points": ab_points[self.ageVal] - status_exp,
-            "Specialties points": spec_points[self.ageVal],
+            "Abilities Points": self.ab_points[self.ageVal] - status_exp,
+            "Specialties points": self.spec_points[self.ageVal],
             "Experience": 0,
             "Status": status
         }
@@ -309,11 +305,11 @@ class PlayerCharacter(Character):
         attributes = {
             "Destiny Points": self.dp,
             "Benefits": {
-                "max": max_benefits[self.ageVal],
+                "max": self.max_benefits[self.ageVal],
                 "list": "p73"
             },
             "Drawbacks": {
-                "min": min_drawbacks[self.ageVal],
+                "min": self.min_drawbacks[self.ageVal],
                 "list": "p94"
             }
         }
@@ -376,8 +372,8 @@ class PlayerCharacter(Character):
             bool: True if none of the checks fails
         """
         legal = True
-        ab_total = ab_points[self.ageVal]
-        spec_total = spec_points[self.ageVal]
+        ab_total = self.ab_points[self.ageVal]
+        spec_total = self.spec_points[self.ageVal]
         try:
             flaws = self.data["Attributes"]["Drawbacks"]["Flaws"]
         except KeyError:
@@ -390,17 +386,17 @@ class PlayerCharacter(Character):
             if rank > 2:
                 print("{}: {} exp {}".format(ab, rank, (rank - 2) * 30 - 20))
                 ab_total -= (rank - 2) * 30 - 20
-            if rank > ab_max_rank[self.ageVal]:
+            if rank > self.ab_max_rank[self.ageVal]:
                 print("{} at {} exceeds the maximum value of {} for the age".format(
-                    ab, rank, ab_max_rank[self.ageVal]
+                    ab, rank, self.ab_max_rank[self.ageVal]
                 ))
             sp_legal, sp = self.validate_specialties(ab)
             if not sp_legal:
                 legal = False
             spec_total -= sp
 
-        print("Ability points: starting {}, left: {}".format(ab_points[self.ageVal], ab_total))
-        print("Specialty points: starting {}, left: {}".format(spec_points[self.ageVal], spec_total))
+        print("Ability points: starting {}, left: {}".format(self.ab_points[self.ageVal], ab_total))
+        print("Specialty points: starting {}, left: {}".format(self.spec_points[self.ageVal], spec_total))
         if ab_total < 0 or spec_total < 0:
             legal = False
 
@@ -419,21 +415,21 @@ class PlayerCharacter(Character):
         """
         legal = True
         db_n = self.get_traits_n("Drawbacks")
-        if db_n < min_drawbacks[self.ageVal]:
+        if db_n < self.min_drawbacks[self.ageVal]:
             print("{} Drawbacks, expected min {}".format(
                 db_n,
-                min_drawbacks[self.ageVal]
+                self.min_drawbacks[self.ageVal]
             ))
             legal = False
         ben_n = self.get_traits_n("Benefits")
-        if ben_n > max_benefits[self.ageVal]:
+        if ben_n > self.max_benefits[self.ageVal]:
             print("{} Benefits, expected max {}".format(
                 ben_n,
-                max_benefits[self.ageVal]
+                self.max_benefits[self.ageVal]
             ))
             legal = False
 
-        db_bought = db_n - min_drawbacks[self.ageVal]
+        db_bought = db_n - self.min_drawbacks[self.ageVal]
 
         dp = self.dp - ben_n + db_bought
         print("Destiny points: {} initial - {} benefits + {} drawbacks = {}".format(
