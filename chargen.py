@@ -236,7 +236,6 @@ class Character:
 
         Returns:
             int: the ablity rank. Defaults to 2 if the ability is not listed
-
         """
         try:
             a = self.data["Abilities"][ability]
@@ -262,7 +261,8 @@ class Character:
         }
         return der
 
-    def get_dp(self):
+    @property
+    def dp(self):
         """Calculate the destiny points"""
         return 7 - self.ageVal
 
@@ -310,17 +310,7 @@ class Character:
         """Generate the ability and specialities points available to spend. Include handbook pages"""
         status = set_status()
         status_exp = (status - 2) * 30 - 20
-        if not self.tier or self.tier == 1:
-            abilities = {
-                "Abilities List": "p56",
-                "Abilities Costs": "p50",
-                "Specialties Costs": "p51",
-                "Abilities Points": ab_points[self.ageVal] - status_exp,
-                "Specialties points": spec_points[self.ageVal],
-                "Experience": roller(1) * 10 if self.tier else 0,
-                "Status": status
-            }
-        elif self.tier == 2:
+        if self.tier == 2:
             abilities = {
                 "Abilities List": "p56",
                 "1 ability": 5,
@@ -333,16 +323,26 @@ class Character:
                 "Abilities List": "p56",
                 "1 or 2 abilities": "3 or 4",
                 "if first ability is 4 chose another two": 3,
-                "Specialties: 2 or 3": 1
+                "2 or 3 specialties": 1
+            }
+        else:
+            abilities = {
+                "Abilities List": "p56",
+                "Abilities Costs": "p50",
+                "Specialties Costs": "p51",
+                "Abilities Points": ab_points[self.ageVal] - status_exp,
+                "Specialties points": spec_points[self.ageVal],
+                "Experience": roller(1) * 10 if self.tier else 0,
+                "Status": status
             }
         return abilities
 
     def generate_attributes(self):
         """Generates the available destiny points, max benefits and min drawbacks. Update the derived statistics"""
-        attributes = {"Destiny Points": 0, "Benefits": {}, "Drawbacks": {}}
+        attributes = {}
         if not self.tier or self.tier == 1:
             attributes = {
-                "Destiny Points": self.get_dp(),
+                "Destiny Points": self.dp,
                 "Benefits": {
                     "max": max_benefits[self.ageVal],
                     "list": "p73"
@@ -445,9 +445,9 @@ class Character:
 
         db_bought = db_n - min_drawbacks[self.ageVal]
 
-        dp = self.get_dp() - ben_n + db_bought
+        dp = self.dp - ben_n + db_bought
         print("Destiny points: {} initial - {} benefits + {} drawbacks = {}".format(
-            self.get_dp(), ben_n, db_bought, dp
+            self.dp, ben_n, db_bought, dp
         ))
         if dp < 0:
             legal = False
