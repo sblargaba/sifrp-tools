@@ -1,5 +1,5 @@
 import math
-
+import chargen
 from chargen import utils
 
 
@@ -115,7 +115,7 @@ class PlayerCharacter(utils.Character):
                 "list": "p94"
             }
         }
-        attributes.update(self.get_derived())
+        attributes.update(self.generate_derived())
         return attributes
 
     def generate_bg(self):
@@ -203,7 +203,7 @@ class PlayerCharacter(utils.Character):
             legal = False
 
         if not legal:
-            self.legal = False
+            self.is_legal = False
         return legal
 
     def validate_attributes(self):
@@ -241,7 +241,7 @@ class PlayerCharacter(utils.Character):
             legal = False
 
         if not legal:
-            self.legal = False
+            self.is_legal = False
         return legal
 
     def validate_specialties(self, ability):
@@ -268,7 +268,7 @@ class NCTier1(PlayerCharacter):
         return abilities
 
 
-class NCTier2(utils.Character):
+class NCTier2(chargen.NCTier3):
     def __init__(self, name="Ser Example", data=None, age=None):
         super().__init__(name, data, age)
 
@@ -321,7 +321,7 @@ class NCTier2(utils.Character):
             legal = False
 
         if not legal:
-            self.legal = False
+            self.is_legal = False
         return legal
 
 
@@ -341,11 +341,16 @@ class NCTier3(utils.Character):
         }
         return abilities
 
+    def generate_attributes(self):
+        """This Tier NC have no attributes to validate"""
+        return True
+
     def validate_specialties(self, ability):
         legal = True
         total = 0
-        if type(ability) == dict:
-            for spec, val in ability:
+        ab = self.data["Abilities"][ability]
+        if type(ab) == dict:
+            for spec, val in ab:
                 if spec is not "Stat":
                     if val != 1:
                         print("{} should be 1, is {}".format(spec, val))
@@ -377,5 +382,9 @@ class NCTier3(utils.Character):
             legal = False
 
         if not legal:
-            self.legal = False
+            self.is_legal = False
         return legal
+
+    def validate_attributes(self):
+        """This tier NC have no attributes to validate"""
+        return True

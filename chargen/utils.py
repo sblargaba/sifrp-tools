@@ -2,6 +2,7 @@
 
 import random
 import yaml
+import abc
 
 statuses = [
     "House retainer, common hedge knight, freeman",
@@ -121,8 +122,21 @@ def age_to_val(age):
 
 
 class Character:
+    """The character class
+    
+    This class is designed to be subclassed for specific use depending on the particular
+    type of character that needs to be represented
+    
+    It provides a basic initialization and a few helper methods; it also defines abstract
+    methods that need implementation in subclasses
+    
+    Args:
+        name (str): The name of the character.
+        age (int): When generating a random character set the age.
+        data (dict): A dictionary containing a character data.
+    """
     def __init__(self, name="Ser Example", data=None, age=None):
-        self.legal = True
+        self.is_legal = True
         self.name = name
         if data:
             self.data = data
@@ -134,7 +148,8 @@ class Character:
                 "Armor": None,
                 "Arms": None,
                 "Abilities": self.generate_abilities(),
-                "Attributes": self.generate_attributes()
+                "Attributes": self.generate_attributes(),
+                "Derived": self.generate_derived()
             }
 
     def __str__(self):
@@ -160,7 +175,7 @@ class Character:
         else:
             return a["Stat"]
 
-    def get_derived(self):
+    def generate_derived(self):
         """Calculate the derived statistics (Combat/Intrigue Defense, Health, Composture)
 
         Returns:
@@ -174,27 +189,44 @@ class Character:
         }
         return der
 
+    @abc.abstractmethod
     def generate_attributes(self):
         """Generates the available destiny points, max benefits and min drawbacks. Update the derived statistics"""
-        return self.get_derived()
 
+    @abc.abstractmethod
     def generate_abilities(self):
-        """To be overridden by child classess"""
-        pass
+        """Generate the abilities of the character"""
 
     def validate(self):
-        """Checks if the character ha the correct values and updates the derived statistics"""
+        """Check if the character has allowed values for abilities, attributes and derived statistics
+        
+        Returns:
+            bool: True if the character can be considered legal
+        """
         self.validate_abilities()
         self.validate_attributes()
-        self.data["Attributes"].update(self.get_derived())
-        return self.legal
+        self.validate_derived()
+        return self.is_legal
 
-    def validate_specialties(self, ability):
-        pass
+    def validate_derived(self):
+        """Checks if the derived statistics of the character are correct"""
+        derived = self.generate_derived()
+        if derived != self.data["Derived"]:
+            self.is_legal = False
+            print("Calculated derived statistics is {} instead of {}".format(derived, self.data["Derived"]))
+            return False
+        return True
 
+    @abc.abstractmethod
     def validate_abilities(self):
-        pass
+        """Check if the abilities of the character adhere to the rules
+        
+        The method updates the ``is_legal`` class attribute if needed"""
 
+    @abc.abstractmethod
     def validate_attributes(self):
-        pass
+        """Check if the attributes of the character adhere to the rules
+        
+        The method updates the ``is_legal`` class attribute if needed"""
+
 
