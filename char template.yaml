@@ -8,6 +8,7 @@ Name:
     Destiny Points: 3
     Benefits: {p51, p73}
     Drawbacks: {p51, p94}
+  Derived:
     Combat Defense: Agility + Athletics + Awareness
     Health: 3 * Endurance
     Intrigue Defense: Cunning + Status + Awareness
