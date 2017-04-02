@@ -22,5 +22,11 @@ if __name__ == "__main__":
         with open("/tmp/test.yml", "w") as f:
             f.write(str(char))
     else:
-        char = chargen.Character(age=args.age)
+        char = chargen.PlayerCharacter(age=args.age)
+        print(char)
+        char = chargen.NCTier3(age=args.age)
+        print(char)
+        char = chargen.NCTier2(age=args.age)
+        print(char)
+        char = chargen.NCTier1(age=args.age)
         print(char)

@@ -2,6 +2,7 @@
 
 import random
 import yaml
+import math
 
 statuses = [
     "House retainer, common hedge knight, freeman",
@@ -274,152 +275,21 @@ class Character:
         self.data["Attributes"].update(self.get_derived())
         return self.legal
 
-    def validate_specialties(self, ability, ):
-        legal = True
-        total = 0
-        if type(ability) == dict:
-            for spec, val in ability:
-                if spec is not "Stat":
-                    total -= val * 10
-                    rank = self.get_rank(ability)
-                    if val > rank:
-                        print("{} at {} exceeds the {} rank of {}".format(spec, val, ability, rank))
-                        legal = False
-        return legal, total
+    def validate_specialties(self, ability):
+        # TODO
+        pass
 
     def validate_abilities(self):
-        """Check if the abilities are correct.
-        
-        For each ability the method checks the rank does not exceeds the maximum allowed for the caracter.
-        The method also calculates the amount of experience needed for the character's abilities.
-        The output of the check is printed on the screen; flaws are taken into consideration when perofrming checks.
-        
-        Returns:
-            bool: True if none of the checks fails
-        """
-        legal = True
-        ab_total = ab_points[self.ageVal]
-        spec_total = spec_points[self.ageVal]
-        try:
-            flaws = self.data["Attributes"]["Drawbacks"]["Flaws"]
-        except KeyError:
-            flaws = []
-
-        for ab in self.data["Abilities"]:
-            rank = self.get_rank(ab)
-            if ab in flaws:
-                rank += 1
-            if rank > 2:
-                print("{}: {} exp {}".format(ab, rank, (rank - 2) * 30 - 20))
-                ab_total -= (rank - 2) * 30 - 20
-            if rank > ab_max_rank[self.ageVal]:
-                print("{} at {} exceeds the maximum value of {} for the age".format(
-                    ab, rank, ab_max_rank[self.ageVal]
-                ))
-            sp_legal, sp = self.validate_specialties(ab)
-            if not sp_legal:
-                legal = False
-            spec_total -= sp
-
-        print("Ability points: starting {}, left: {}".format(ab_points[self.ageVal], ab_total))
-        print("Specialty points: starting {}, left: {}".format(spec_points[self.ageVal], spec_total))
-        if ab_total < 0 or spec_total < 0:
-            legal = False
-
-        if not legal:
-            self.legal = False
-        return legal
+        # TODO
+        pass
 
     def validate_attributes(self):
-        """Checks attributes and destiny points
-        
-        The methods checks if the character has at least the required number of drawbacks and less the maximum
-        benefits allowed
-        
-        Returns:
-            bool: True if none of the checks fails        
-        """
-        legal = True
-        db_n = self.get_traits_n("Drawbacks")
-        if db_n < min_drawbacks[self.ageVal]:
-            print("{} Drawbacks, expected min {}".format(
-                db_n,
-                min_drawbacks[self.ageVal]
-            ))
-            legal = False
-        ben_n = self.get_traits_n("Benefits")
-        if ben_n > max_benefits[self.ageVal]:
-            print("{} Benefits, expected max {}".format(
-                ben_n,
-                max_benefits[self.ageVal]
-            ))
-            legal = False
-
-        db_bought = db_n - min_drawbacks[self.ageVal]
-
-        dp = self.dp - ben_n + db_bought
-        print("Destiny points: {} initial - {} benefits + {} drawbacks = {}".format(
-            self.dp, ben_n, db_bought, dp
-        ))
-        if dp < 0:
-            legal = False
-
-        if not legal:
-            self.legal = False
-        return legal
-
-
-class NCTier2(Character):
-    def __init__(self, name="Ser Example", data=None, age=None):
-        super().__init__(name, data, age)
-        self.legal = True
-        self.name = name
-        if data:
-            self.data = data
-            self.ageVal = age_to_val(data["Background"]["Age"])
-            self.exp = data["Abillities"]["Experience"]
-        else:
-            self.ageVal = age_to_val(age) if age is not None else set_age()
-            self.data = {
-                "Armor": None,
-                "Arms": None,
-                "Abilities": self.generate_abilities(),
-                "Attributes": self.generate_attributes()
-            }
-
-    def generate_abilities(self):
-        """Generate the ability and specialities points available to spend. Include handbook pages"""
-        status = set_status()
-        abilities = {
-                "Abilities List": "p56",
-                "1 ability": 5,
-                "2 ablities": 4,
-                "4 abilities": 3,
-                "4 specialties": "half the ability rank (rounded down)",
-                "Status": status
-            }
-        return abilities
-
-
-class NCTier3(Character):
-    def __init__(self, name="Ser Example", data=None, age=None):
-        super().__init__(name, data, age)
-
-    def generate_abilities(self):
-        """Generate the ability and specialities points available to spend. Include handbook pages"""
-        status = set_status()
-        abilities = {
-            "Abilities List": "p56",
-            "1 or 2 abilities": "3 or 4",
-            "if first ability is 4 chose another two": 3,
-            "2 or 3 specialties": 1,
-            "Status": status
-        }
-        return abilities
+        # TODO
+        pass
 
 
 class PlayerCharacter(Character):
-    def __init__(self, name, data, age):
+    def __init__(self, name="Ser Example", data=None, age=None):
         super().__init__(name, data, age)
         self.data["Backgrounds"] = self.generate_bg()
 
@@ -499,6 +369,100 @@ class PlayerCharacter(Character):
                 total += 1
         return total
 
+    def validate_abilities(self):
+        """Check if the abilities are correct.
+
+        For each ability the method checks the rank does not exceeds the maximum allowed for the caracter.
+        The method also calculates the amount of experience needed for the character's abilities.
+        The output of the check is printed on the screen; flaws are taken into consideration when perofrming checks.
+
+        Returns:
+            bool: True if none of the checks fails
+        """
+        legal = True
+        ab_total = ab_points[self.ageVal]
+        spec_total = spec_points[self.ageVal]
+        try:
+            flaws = self.data["Attributes"]["Drawbacks"]["Flaws"]
+        except KeyError:
+            flaws = []
+
+        for ab in self.data["Abilities"]:
+            rank = self.get_rank(ab)
+            if ab in flaws:
+                rank += 1
+            if rank > 2:
+                print("{}: {} exp {}".format(ab, rank, (rank - 2) * 30 - 20))
+                ab_total -= (rank - 2) * 30 - 20
+            if rank > ab_max_rank[self.ageVal]:
+                print("{} at {} exceeds the maximum value of {} for the age".format(
+                    ab, rank, ab_max_rank[self.ageVal]
+                ))
+            sp_legal, sp = self.validate_specialties(ab)
+            if not sp_legal:
+                legal = False
+            spec_total -= sp
+
+        print("Ability points: starting {}, left: {}".format(ab_points[self.ageVal], ab_total))
+        print("Specialty points: starting {}, left: {}".format(spec_points[self.ageVal], spec_total))
+        if ab_total < 0 or spec_total < 0:
+            legal = False
+
+        if not legal:
+            self.legal = False
+        return legal
+
+    def validate_attributes(self):
+        """Checks attributes and destiny points
+
+        The methods checks if the character has at least the required number of drawbacks and less the maximum
+        benefits allowed
+
+        Returns:
+            bool: True if none of the checks fails        
+        """
+        legal = True
+        db_n = self.get_traits_n("Drawbacks")
+        if db_n < min_drawbacks[self.ageVal]:
+            print("{} Drawbacks, expected min {}".format(
+                db_n,
+                min_drawbacks[self.ageVal]
+            ))
+            legal = False
+        ben_n = self.get_traits_n("Benefits")
+        if ben_n > max_benefits[self.ageVal]:
+            print("{} Benefits, expected max {}".format(
+                ben_n,
+                max_benefits[self.ageVal]
+            ))
+            legal = False
+
+        db_bought = db_n - min_drawbacks[self.ageVal]
+
+        dp = self.dp - ben_n + db_bought
+        print("Destiny points: {} initial - {} benefits + {} drawbacks = {}".format(
+            self.dp, ben_n, db_bought, dp
+        ))
+        if dp < 0:
+            legal = False
+
+        if not legal:
+            self.legal = False
+        return legal
+
+    def validate_specialties(self, ability):
+        legal = True
+        total = 0
+        if type(ability) == dict:
+            for spec, val in ability:
+                if spec is not "Stat":
+                    total += val * 10
+                    rank = self.get_rank(ability)
+                    if val > rank:
+                        print("{} at {} exceeds the {} rank of {}".format(spec, val, ability, rank))
+                        legal = False
+        return legal, total
+
 
 class NCTier1(PlayerCharacter):
     def __init__(self, name="Ser Example", data=None, age=None):
@@ -509,4 +473,89 @@ class NCTier1(PlayerCharacter):
         abilities["Experience"] = roller(1) * 10
         return abilities
 
+
+class NCTier2(Character):
+    def __init__(self, name="Ser Example", data=None, age=None):
+        super().__init__(name, data, age)
+
+    def generate_abilities(self):
+        """Generate the ability and specialities points available to spend. Include handbook pages"""
+        status = set_status()
+        abilities = {
+                "Abilities List": "p56",
+                "1 ability": 5,
+                "2 ablities": 4,
+                "4 abilities": 3,
+                "4 specialties": "half the ability rank (rounded down)",
+                "Status": status
+            }
+        return abilities
+
+    def validate_specialties(self, ability):
+        legal = True
+        total = 0
+        if type(ability) == dict:
+            for spec, val in ability:
+                if spec is not "Stat":
+                    total += val
+                    rank = self.get_rank(ability)
+                    if val != math.floor(rank):
+                        print("{} at {} exceeds half of the {} rank of {}".format(spec, val, ability, rank))
+                        legal = False
+        return legal, total
+
+    def validate_abilities(self):
+        legal = True
+        ab_checklist = [5, 4, 4, 3, 3, 3, 3]
+        spec_total = 4
+
+        for ab in self.data["Abilities"]:
+            rank = self.get_rank(ab)
+            try:
+                ab_checklist.remove(rank)
+            except ValueError:
+                print("{} rank {} is not in checklist {}".format(ab, rank, ab_checklist))
+                legal = False
+            sp_legal, sp = self.validate_specialties(ab)
+            if not sp_legal:
+                legal = False
+            spec_total -= sp
+
+        print("Abilities left: {}".format(ab_checklist))
+        print("Specialties left: {}".format(spec_total))
+        if spec_total < 0:
+            legal = False
+
+        if not legal:
+            self.legal = False
+        return legal
+
+
+class NCTier3(Character):
+    def __init__(self, name="Ser Example", data=None, age=None):
+        super().__init__(name, data, age)
+
+    def generate_abilities(self):
+        """Generate the ability and specialities points available to spend. Include handbook pages"""
+        status = set_status()
+        abilities = {
+            "Abilities List": "p56",
+            "1 or 2 abilities": "3 or 4",
+            "if first ability is 4 chose another two": 3,
+            "2 or 3 specialties": 1,
+            "Status": status
+        }
+        return abilities
+
+    def validate_specialties(self, ability):
+        # TODO
+        pass
+
+    def validate_abilities(self):
+        # TODO
+        pass
+
+    def validate_attributes(self):
+        # TODO
+        pass
 
