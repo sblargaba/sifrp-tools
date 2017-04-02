@@ -455,3 +455,76 @@ class Character:
         if not legal:
             self.legal = False
         return legal
+
+
+class NCTier2(Character):
+    def __init__(self, name="Ser Example", data=None, age=None, tier=None):
+        super().__init__(name, data, age, tier)
+        self.legal = True
+        self.name = name
+        self.tier = tier
+        if data:
+            self.data = data
+            self.ageVal = age_to_val(data["Background"]["Age"])
+            self.exp = data["Abillities"]["Experience"]
+        else:
+            self.ageVal = age_to_val(age) if age is not None else set_age()
+            self.data = {
+                "Armor": None,
+                "Arms": None,
+                "Abilities": self.generate_abilities(),
+                "Attributes": self.generate_attributes()
+            }
+            if not self.tier or self.tier == 1:
+                self.data["Backgrounds"] = self.generate_bg()
+
+    def generate_abilities(self):
+        """Generate the ability and specialities points available to spend. Include handbook pages"""
+        status = set_status()
+        abilities = {
+                "Abilities List": "p56",
+                "1 ability": 5,
+                "2 ablities": 4,
+                "4 abilities": 3,
+                "4 specialties": "half the ability rank (rounded down)",
+                "Status": status
+            }
+        return abilities
+
+    def generate_attributes(self):
+        """Generates the available destiny points, max benefits and min drawbacks. Update the derived statistics"""
+        return self.get_derived()
+
+
+class NCTier3(Character):
+    def __init__(self, name="Ser Example", data=None, age=None, tier=None):
+        super().__init__(name, data, age, tier)
+        self.legal = True
+        self.name = name
+        self.tier = tier
+        if data:
+            self.data = data
+            self.ageVal = age_to_val(data["Background"]["Age"])
+            self.exp = data["Abillities"]["Experience"]
+        else:
+            self.ageVal = age_to_val(age) if age is not None else set_age()
+            self.data = {
+                "Armor": None,
+                "Arms": None,
+                "Abilities": self.generate_abilities(),
+                "Attributes": self.generate_attributes()
+            }
+            if not self.tier or self.tier == 1:
+                self.data["Backgrounds"] = self.generate_bg()
+
+    def generate_abilities(self):
+        """Generate the ability and specialities points available to spend. Include handbook pages"""
+        status = set_status()
+        abilities = {
+            "Abilities List": "p56",
+            "1 or 2 abilities": "3 or 4",
+            "if first ability is 4 chose another two": 3,
+            "2 or 3 specialties": 1,
+            "Status": status
+        }
+        return abilities
