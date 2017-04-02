@@ -1,6 +1,8 @@
 import argparse
+
 import yaml
-import chargen
+
+from chargen import classes
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -16,17 +18,17 @@ if __name__ == "__main__":
         with open(args.file) as f:
             raw = yaml.load(f)
         name, data = raw.popitem()
-        char = chargen.Character(name=name, data=data)
+        char = classes.PlayerCharacter(name=name, data=data)
         char.validate()
         raw = {name: char.data}
         with open("/tmp/test.yml", "w") as f:
             f.write(str(char))
     else:
-        char = chargen.PlayerCharacter(age=args.age)
+        char = classes.PlayerCharacter(age=args.age)
         print(char)
-        char = chargen.NCTier3(age=args.age)
+        char = classes.NCTier3(age=args.age)
         print(char)
-        char = chargen.NCTier2(age=args.age)
+        char = classes.NCTier2(age=args.age)
         print(char)
-        char = chargen.NCTier1(age=args.age)
+        char = classes.NCTier1(age=args.age)
         print(char)
