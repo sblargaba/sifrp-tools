@@ -59,7 +59,7 @@ ages = [
     ("80+", "Venerable")
 ]
 
-exp_points = [120, 150, 180, 210, 240, 270, 330, 360]
+ab_points = [120, 150, 180, 210, 240, 270, 330, 360]
 
 spec_points = [40, 40, 60, 80, 100, 160, 200, 240]
 
@@ -67,7 +67,7 @@ min_drawbacks = [0, 0, 0, 1, 1, 2, 3, 4]
 
 max_benefits = [3, 3, 3, 3, 3, 2, 1, 0]
 
-ability_max_rank = [4, 4, 5, 7, 6, 5, 5, 5]
+ab_max_rank = [4, 4, 5, 7, 6, 5, 5, 5]
 
 
 def roller(n):
@@ -81,15 +81,15 @@ def roller(n):
 def set_status():
     roll = roller(2)
     if roll == 2:
-        return 0
-    elif roll <= 4:
-        return 1
-    elif roll <= 9:
         return 2
-    elif roll <= 11:
+    elif roll <= 4:
         return 3
-    elif roll <= 12:
+    elif roll <= 9:
         return 4
+    elif roll <= 11:
+        return 5
+    elif roll <= 12:
+        return 6
 
 
 def set_age(roll=roller(3)):
@@ -164,6 +164,7 @@ class Character:
     
             data = {
                 "Abilities": {
+                    "Experience": (int)
                     ability_name: ability_rank (int),
                     ability_name: {
                         "Stat": ability_rank (int),
@@ -204,20 +205,24 @@ class Character:
             }
     """
 
-    def __init__(self, name="Ser Example", data=None, age=None):
+    def __init__(self, name="Ser Example", data=None, age=None, tier=None):
+        self.legal = True
         self.name = name
+        self.tier = tier
         if data:
             self.data = data
             self.ageVal = age_to_val(data["Background"]["Age"])
+            self.exp = data["Abillities"]["Experience"]
         else:
             self.ageVal = age_to_val(age) if age is not None else set_age()
             self.data = {
                 "Armor": None,
                 "Arms": None,
                 "Abilities": self.generate_abilities(),
-                "Background": self.generate_bg(),
                 "Attributes": self.generate_attributes()
             }
+            if not self.tier or self.tier == 1:
+                self.data["Backgrounds"] = self.generate_bg()
 
     def __str__(self):
         out = {self.name: self.data}
@@ -302,41 +307,73 @@ class Character:
         return events
 
     def generate_abilities(self):
-        """Generate the ability and specialities points available to spend and handbook pages"""
+        """Generate the ability and specialities points available to spend. Include handbook pages"""
         status = set_status()
         status_exp = (status - 2) * 30 - 20
-        abilities = {
-            "Abilities List": "p56",
-            "Abilities Costs": "p50",
-            "Abilities Points": exp_points[self.ageVal] - status_exp,
-            "Status": {
-              "Stat": status,
-              "Specialties points": spec_points[self.ageVal]
+        if not self.tier or self.tier == 1:
+            abilities = {
+                "Abilities List": "p56",
+                "Abilities Costs": "p50",
+                "Specialties Costs": "p51",
+                "Abilities Points": ab_points[self.ageVal] - status_exp,
+                "Specialties points": spec_points[self.ageVal],
+                "Experience": roller(1) * 10 if self.tier else 0,
+                "Status": status
             }
-        }
+        elif self.tier == 2:
+            abilities = {
+                "Abilities List": "p56",
+                "1 ability": 5,
+                "2 ablities": 4,
+                "4 abilities": 3,
+                "4 specialties": "half the ability rank (rounded down)"
+            }
+        elif self.tier == 3:
+            abilities = {
+                "Abilities List": "p56",
+                "1 or 2 abilities": "3 or 4",
+                "if first ability is 4 chose another two": 3,
+                "Specialties: 2 or 3": 1
+            }
         return abilities
 
     def generate_attributes(self):
         """Generates the available destiny points, max benefits and min drawbacks. Update the derived statistics"""
-        attributes = {
-            "Destiny Points": self.get_dp(),
-            "Benefits": {
-                "max": max_benefits[self.ageVal],
-                "list": "p73"
-            },
-            "Drawbacks": {
-                "min": min_drawbacks[self.ageVal],
-                "list": "p94"
+        attributes = {"Destiny Points": 0, "Benefits": {}, "Drawbacks": {}}
+        if not self.tier or self.tier == 1:
+            attributes = {
+                "Destiny Points": self.get_dp(),
+                "Benefits": {
+                    "max": max_benefits[self.ageVal],
+                    "list": "p73"
+                },
+                "Drawbacks": {
+                    "min": min_drawbacks[self.ageVal],
+                    "list": "p94"
+                }
             }
-        }
         attributes.update(self.get_derived())
         return attributes
 
     def validate(self):
         """Checks if the character ha the correct values and updates the derived statistics"""
-        legal = self.validate_abilities() and self.validate_attributes()
+        self.validate_abilities()
+        self.validate_attributes()
         self.data["Attributes"].update(self.get_derived())
-        return legal
+        return self.legal
+
+    def validate_specialties(self, ability, ):
+        legal = True
+        total = 0
+        if type(ability) == dict:
+            for spec, val in ability:
+                if spec is not "Stat":
+                    total -= val * 10
+                    rank = self.get_rank(ability)
+                    if val > rank:
+                        print("{} at {} exceeds the {} rank of {}".format(spec, val, ability, rank))
+                        legal = False
+        return legal, total
 
     def validate_abilities(self):
         """Check if the abilities are correct.
@@ -349,7 +386,8 @@ class Character:
             bool: True if none of the checks fails
         """
         legal = True
-        total = exp_points[self.ageVal]
+        ab_total = ab_points[self.ageVal]
+        spec_total = spec_points[self.ageVal]
         try:
             flaws = self.data["Attributes"]["Drawbacks"]["Flaws"]
         except KeyError:
@@ -361,16 +399,23 @@ class Character:
                 rank += 1
             if rank > 2:
                 print("{}: {} exp {}".format(ab, rank, (rank - 2) * 30 - 20))
-                total -= (rank - 2) * 30 - 20
-            if rank > ability_max_rank[self.ageVal]:
+                ab_total -= (rank - 2) * 30 - 20
+            if rank > ab_max_rank[self.ageVal]:
                 print("{} at {} exceeds the maximum value of {} for the age".format(
-                    ab, rank, ability_max_rank[self.ageVal]
+                    ab, rank, ab_max_rank[self.ageVal]
                 ))
+            sp_legal, sp = self.validate_specialties(ab)
+            if not sp_legal:
                 legal = False
-        print("Experience: starting {}, left: {}".format(exp_points[self.ageVal], total))
-        if total < 0:
+            spec_total -= sp
+
+        print("Ability points: starting {}, left: {}".format(ab_points[self.ageVal], ab_total))
+        print("Specialty points: starting {}, left: {}".format(spec_points[self.ageVal], spec_total))
+        if ab_total < 0 or spec_total < 0:
             legal = False
 
+        if not legal:
+            self.legal = False
         return legal
 
     def validate_attributes(self):
@@ -407,4 +452,6 @@ class Character:
         if dp < 0:
             legal = False
 
+        if not legal:
+            self.legal = False
         return legal
