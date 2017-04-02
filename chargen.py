@@ -210,6 +210,7 @@ class Character:
         self.name = name
         if data:
             self.data = data
+            # TODO: validate this shit
             self.ageVal = age_to_val(data["Background"]["Age"])
             self.exp = data["Abillities"]["Experience"]
         else:
@@ -220,7 +221,6 @@ class Character:
                 "Abilities": self.generate_abilities(),
                 "Attributes": self.generate_attributes()
             }
-            self.data["Backgrounds"] = self.generate_bg()
 
     def __str__(self):
         out = {self.name: self.data}
@@ -259,81 +259,13 @@ class Character:
         }
         return der
 
-    @property
-    def dp(self):
-        """Calculate the destiny points"""
-        return 7 - self.ageVal
-
-    def get_traits_n(self, trait):
-        """Get the number of traits
-
-        Args:
-            trait (str): Defines the traits to check, either "Drawbacks" or "Benefit"
-
-        Returns:
-            int: The number of traits 
-        """
-        total = 0
-        for db in self.data["Attributes"][trait].values():
-            if type(db) is list:
-                total += len(db)
-            else:
-                total += 1
-        return total
-
-    def generate_bg(self):
-        """Random generation of background informations"""
-        status = self.data["Abilities"]["Status"]
-        bg = {
-            "Age": str(ages[self.ageVal]),
-            "Status": statuses[status - 2],
-            "Goal": goals[roller(2) - 2],
-            "Motivation": motivations[roller(2) - 2],
-            "Virtue": virtues[roller(2) - 2],
-            "Vice": vices[roller(2) - 2],
-            "Events": self.generate_events()
-        }
-        return bg
-
-    def generate_events(self):
-        """Generate a list of background events"""
-        events = []
-        while len(events) < self.ageVal:
-            event = roller(2) - 2
-            if backgrounds[event] not in events:
-                events.append(backgrounds[event])
-        return events
-
-    def generate_abilities(self):
-        """Generate the ability and specialities points available to spend. Include handbook pages"""
-        status = set_status()
-        status_exp = (status - 2) * 30 - 20
-        abilities = {
-            "Abilities List": "p56",
-            "Abilities Costs": "p50",
-            "Specialties Costs": "p51",
-            "Abilities Points": ab_points[self.ageVal] - status_exp,
-            "Specialties points": spec_points[self.ageVal],
-            "Experience": 0,
-            "Status": status
-        }
-        return abilities
-
     def generate_attributes(self):
         """Generates the available destiny points, max benefits and min drawbacks. Update the derived statistics"""
-        attributes = {
-            "Destiny Points": self.dp,
-            "Benefits": {
-                "max": max_benefits[self.ageVal],
-                "list": "p73"
-            },
-            "Drawbacks": {
-                "min": min_drawbacks[self.ageVal],
-                "list": "p94"
-            }
-        }
-        attributes.update(self.get_derived())
-        return attributes
+        return self.get_derived()
+
+    def generate_abilities(self):
+        """To be overridden by child classess"""
+        pass
 
     def validate(self):
         """Checks if the character ha the correct values and updates the derived statistics"""
@@ -437,22 +369,11 @@ class Character:
         return legal
 
 
-class NCTier1(Character):
-    def __init__(self, name="Ser Example", data=None, age=None, tier=None):
-        super().__init__(name, data, age, tier)
-
-    def generate_abilities(self):
-        abilities = super().generate_abilities()
-        abilities["Experience"] = roller(1) * 10
-        return abilities
-
-
 class NCTier2(Character):
-    def __init__(self, name="Ser Example", data=None, age=None, tier=None):
-        super().__init__(name, data, age, tier)
+    def __init__(self, name="Ser Example", data=None, age=None):
+        super().__init__(name, data, age)
         self.legal = True
         self.name = name
-        self.tier = tier
         if data:
             self.data = data
             self.ageVal = age_to_val(data["Background"]["Age"])
@@ -465,8 +386,6 @@ class NCTier2(Character):
                 "Abilities": self.generate_abilities(),
                 "Attributes": self.generate_attributes()
             }
-            if not self.tier or self.tier == 1:
-                self.data["Backgrounds"] = self.generate_bg()
 
     def generate_abilities(self):
         """Generate the ability and specialities points available to spend. Include handbook pages"""
@@ -481,31 +400,10 @@ class NCTier2(Character):
             }
         return abilities
 
-    def generate_attributes(self):
-        """Generates the available destiny points, max benefits and min drawbacks. Update the derived statistics"""
-        return self.get_derived()
 
-
-class NCTier3(NCTier2):
-    def __init__(self, name="Ser Example", data=None, age=None, tier=None):
-        super().__init__(name, data, age, tier)
-        self.legal = True
-        self.name = name
-        self.tier = tier
-        if data:
-            self.data = data
-            self.ageVal = age_to_val(data["Background"]["Age"])
-            self.exp = data["Abillities"]["Experience"]
-        else:
-            self.ageVal = age_to_val(age) if age is not None else set_age()
-            self.data = {
-                "Armor": None,
-                "Arms": None,
-                "Abilities": self.generate_abilities(),
-                "Attributes": self.generate_attributes()
-            }
-            if not self.tier or self.tier == 1:
-                self.data["Backgrounds"] = self.generate_bg()
+class NCTier3(Character):
+    def __init__(self, name="Ser Example", data=None, age=None):
+        super().__init__(name, data, age)
 
     def generate_abilities(self):
         """Generate the ability and specialities points available to spend. Include handbook pages"""
@@ -518,3 +416,97 @@ class NCTier3(NCTier2):
             "Status": status
         }
         return abilities
+
+
+class PlayerCharacter(Character):
+    def __init__(self, name, data, age):
+        super().__init__(name, data, age)
+        self.data["Backgrounds"] = self.generate_bg()
+
+    def generate_abilities(self):
+        """Generate the ability and specialities points available to spend. Include handbook pages"""
+        status = set_status()
+        status_exp = (status - 2) * 30 - 20
+        abilities = {
+            "Abilities List": "p56",
+            "Abilities Costs": "p50",
+            "Specialties Costs": "p51",
+            "Abilities Points": ab_points[self.ageVal] - status_exp,
+            "Specialties points": spec_points[self.ageVal],
+            "Experience": 0,
+            "Status": status
+        }
+        return abilities
+
+    def generate_attributes(self):
+        """Generates the available destiny points, max benefits and min drawbacks. Update the derived statistics"""
+        attributes = {
+            "Destiny Points": self.dp,
+            "Benefits": {
+                "max": max_benefits[self.ageVal],
+                "list": "p73"
+            },
+            "Drawbacks": {
+                "min": min_drawbacks[self.ageVal],
+                "list": "p94"
+            }
+        }
+        attributes.update(self.get_derived())
+        return attributes
+
+    def generate_bg(self):
+        """Random generation of background informations"""
+        status = self.data["Abilities"]["Status"]
+        bg = {
+            "Age": str(ages[self.ageVal]),
+            "Status": statuses[status - 2],
+            "Goal": goals[roller(2) - 2],
+            "Motivation": motivations[roller(2) - 2],
+            "Virtue": virtues[roller(2) - 2],
+            "Vice": vices[roller(2) - 2],
+            "Events": self.generate_events()
+        }
+        return bg
+
+    def generate_events(self):
+        """Generate a list of background events"""
+        events = []
+        while len(events) < self.ageVal:
+            event = roller(2) - 2
+            if backgrounds[event] not in events:
+                events.append(backgrounds[event])
+        return events
+
+    @property
+    def dp(self):
+        """Calculate the destiny points"""
+        return 7 - self.ageVal
+
+    def get_traits_n(self, trait):
+        """Get the number of traits
+
+        Args:
+            trait (str): Defines the traits to check, either "Drawbacks" or "Benefit"
+
+        Returns:
+            int: The number of traits 
+        """
+        total = 0
+        for db in self.data["Attributes"][trait].values():
+            if type(db) is list:
+                total += len(db)
+            else:
+                total += 1
+        return total
+
+
+class NCTier1(PlayerCharacter):
+    def __init__(self, name="Ser Example", data=None, age=None):
+        super().__init__(name, data, age)
+
+    def generate_abilities(self):
+        abilities = super().generate_abilities()
+        abilities["Experience"] = roller(1) * 10
+        return abilities
+
+
