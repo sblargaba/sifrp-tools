@@ -205,10 +205,9 @@ class Character:
             }
     """
 
-    def __init__(self, name="Ser Example", data=None, age=None, tier=None):
+    def __init__(self, name="Ser Example", data=None, age=None):
         self.legal = True
         self.name = name
-        self.tier = tier
         if data:
             self.data = data
             self.ageVal = age_to_val(data["Background"]["Age"])
@@ -221,8 +220,7 @@ class Character:
                 "Abilities": self.generate_abilities(),
                 "Attributes": self.generate_attributes()
             }
-            if not self.tier or self.tier == 1:
-                self.data["Backgrounds"] = self.generate_bg()
+            self.data["Backgrounds"] = self.generate_bg()
 
     def __str__(self):
         out = {self.name: self.data}
@@ -310,48 +308,30 @@ class Character:
         """Generate the ability and specialities points available to spend. Include handbook pages"""
         status = set_status()
         status_exp = (status - 2) * 30 - 20
-        if self.tier == 2:
-            abilities = {
-                "Abilities List": "p56",
-                "1 ability": 5,
-                "2 ablities": 4,
-                "4 abilities": 3,
-                "4 specialties": "half the ability rank (rounded down)"
-            }
-        elif self.tier == 3:
-            abilities = {
-                "Abilities List": "p56",
-                "1 or 2 abilities": "3 or 4",
-                "if first ability is 4 chose another two": 3,
-                "2 or 3 specialties": 1
-            }
-        else:
-            abilities = {
-                "Abilities List": "p56",
-                "Abilities Costs": "p50",
-                "Specialties Costs": "p51",
-                "Abilities Points": ab_points[self.ageVal] - status_exp,
-                "Specialties points": spec_points[self.ageVal],
-                "Experience": roller(1) * 10 if self.tier else 0,
-                "Status": status
-            }
+        abilities = {
+            "Abilities List": "p56",
+            "Abilities Costs": "p50",
+            "Specialties Costs": "p51",
+            "Abilities Points": ab_points[self.ageVal] - status_exp,
+            "Specialties points": spec_points[self.ageVal],
+            "Experience": 0,
+            "Status": status
+        }
         return abilities
 
     def generate_attributes(self):
         """Generates the available destiny points, max benefits and min drawbacks. Update the derived statistics"""
-        attributes = {}
-        if not self.tier or self.tier == 1:
-            attributes = {
-                "Destiny Points": self.dp,
-                "Benefits": {
-                    "max": max_benefits[self.ageVal],
-                    "list": "p73"
-                },
-                "Drawbacks": {
-                    "min": min_drawbacks[self.ageVal],
-                    "list": "p94"
-                }
+        attributes = {
+            "Destiny Points": self.dp,
+            "Benefits": {
+                "max": max_benefits[self.ageVal],
+                "list": "p73"
+            },
+            "Drawbacks": {
+                "min": min_drawbacks[self.ageVal],
+                "list": "p94"
             }
+        }
         attributes.update(self.get_derived())
         return attributes
 
@@ -457,6 +437,16 @@ class Character:
         return legal
 
 
+class NCTier1(Character):
+    def __init__(self, name="Ser Example", data=None, age=None, tier=None):
+        super().__init__(name, data, age, tier)
+
+    def generate_abilities(self):
+        abilities = super().generate_abilities()
+        abilities["Experience"] = roller(1) * 10
+        return abilities
+
+
 class NCTier2(Character):
     def __init__(self, name="Ser Example", data=None, age=None, tier=None):
         super().__init__(name, data, age, tier)
@@ -496,7 +486,7 @@ class NCTier2(Character):
         return self.get_derived()
 
 
-class NCTier3(Character):
+class NCTier3(NCTier2):
     def __init__(self, name="Ser Example", data=None, age=None, tier=None):
         super().__init__(name, data, age, tier)
         self.legal = True
