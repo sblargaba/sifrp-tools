@@ -211,7 +211,6 @@ class Character:
         self.name = name
         if data:
             self.data = data
-            # TODO: validate this shit
             self.ageVal = age_to_val(data["Background"]["Age"])
             self.exp = data["Abillities"]["Experience"]
         else:
@@ -276,15 +275,12 @@ class Character:
         return self.legal
 
     def validate_specialties(self, ability):
-        # TODO
         pass
 
     def validate_abilities(self):
-        # TODO
         pass
 
     def validate_attributes(self):
-        # TODO
         pass
 
 
@@ -497,7 +493,7 @@ class NCTier2(Character):
         if type(ability) == dict:
             for spec, val in ability:
                 if spec is not "Stat":
-                    total += val
+                    total += 1
                     rank = self.get_rank(ability)
                     if val != math.floor(rank):
                         print("{} at {} exceeds half of the {} rank of {}".format(spec, val, ability, rank))
@@ -548,14 +544,41 @@ class NCTier3(Character):
         return abilities
 
     def validate_specialties(self, ability):
-        # TODO
-        pass
+        legal = True
+        total = 0
+        if type(ability) == dict:
+            for spec, val in ability:
+                if spec is not "Stat":
+                    if val != 1:
+                        print("{} should be 1, is {}".format(spec, val))
+                        legal = False
+        return legal, total
 
     def validate_abilities(self):
-        # TODO
-        pass
+        legal = True
+        spec_total = 3
+        ab_checklist = []
+        ab_checklist_allowed = [
+            [3],
+            [3, 3],
+            [3, 3, 3, 4],
+            [3, 3, 4, 4]
+        ]
 
-    def validate_attributes(self):
-        # TODO
-        pass
+        for ab in self.data["Abilities"]:
+            rank = self.get_rank(ab)
+            ab_checklist.append(rank)
+            sp_legal, sp = self.validate_specialties(ab)
+            if not sp_legal:
+                legal = False
+            spec_total -= sp
+
+        print("Abilities spent: {}".format(ab_checklist))
+        print("Specialties left: {}".format(spec_total))
+        if spec_total < 0 or ab_checklist in ab_checklist_allowed:
+            legal = False
+
+        if not legal:
+            self.legal = False
+        return legal
 
