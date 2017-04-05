@@ -176,7 +176,7 @@ class Character:
             return a["Stat"]
 
     def generate_derived(self):
-        """Calculate the derived statistics (Combat/Intrigue Defense, Health, Composture)
+        """Calculate the derived statistics (Combat and Intrigue Defense, Health, Composture)
 
         Returns:
             dict: A dictionary containig the derived statistics
@@ -191,11 +191,23 @@ class Character:
 
     @abc.abstractmethod
     def generate_attributes(self):
-        """Generates the available destiny points, max benefits and min drawbacks. Update the derived statistics"""
+        """Generates the available destiny points, max benefits and min drawbacks.
+
+        Returns:
+            dict: A dictionary containing 
+                    - Information about the available options regarding attributes.
+                    - Handbook pages to aid the choice of attributes. 
+        """
 
     @abc.abstractmethod
     def generate_abilities(self):
-        """Generate the abilities of the character"""
+        """Generate the abilities of the character
+        
+        Returns:
+            dict: A dictionary containing 
+                    - Information about the available options regarding abilities.
+                    - Handbook pages to aid in the choice of abilities. 
+        """
 
     def validate(self):
         """Check if the character has allowed values for abilities, attributes and derived statistics
@@ -209,7 +221,10 @@ class Character:
         return self.is_legal
 
     def validate_derived(self):
-        """Checks if the derived statistics of the character are correct"""
+        """Checks if the derived statistics of the character are correct
+        
+        The method updates the ``is_legal`` class attribute if needed
+        """
         derived = self.generate_derived()
         if derived != self.data["Derived"]:
             self.is_legal = False
