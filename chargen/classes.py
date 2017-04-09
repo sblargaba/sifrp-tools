@@ -1,5 +1,4 @@
 import math
-import chargen
 from chargen import utils
 
 
@@ -115,7 +114,6 @@ class PlayerCharacter(utils.Character):
                 "list": "p94"
             }
         }
-        attributes.update(self.generate_derived())
         return attributes
 
     def generate_bg(self):
@@ -258,73 +256,6 @@ class PlayerCharacter(utils.Character):
         return legal, total
 
 
-class NCTier1(PlayerCharacter):
-    def __init__(self, name="Ser Example", data=None, age=None):
-        super().__init__(name, data, age)
-
-    def generate_abilities(self):
-        abilities = super().generate_abilities()
-        abilities["Experience"] = utils.roller(1) * 10
-        return abilities
-
-
-class NCTier2(chargen.NCTier3):
-    def __init__(self, name="Ser Example", data=None, age=None):
-        super().__init__(name, data, age)
-
-    def generate_abilities(self):
-        """Generate the ability and specialities points available to spend. Include handbook pages"""
-        status = utils.set_status()
-        abilities = {
-                "Abilities List": "p56",
-                "1 ability": 5,
-                "2 ablities": 4,
-                "4 abilities": 3,
-                "4 specialties": "half the ability rank (rounded down)",
-                "Status": status
-            }
-        return abilities
-
-    def validate_specialties(self, ability):
-        legal = True
-        total = 0
-        if type(ability) == dict:
-            for spec, val in ability:
-                if spec is not "Stat":
-                    total += 1
-                    rank = self.get_rank(ability)
-                    if val != math.floor(rank):
-                        print("{} at {} exceeds half of the {} rank of {}".format(spec, val, ability, rank))
-                        legal = False
-        return legal, total
-
-    def validate_abilities(self):
-        legal = True
-        ab_checklist = [5, 4, 4, 3, 3, 3, 3]
-        spec_total = 4
-
-        for ab in self.data["Abilities"]:
-            rank = self.get_rank(ab)
-            try:
-                ab_checklist.remove(rank)
-            except ValueError:
-                print("{} rank {} is not in checklist {}".format(ab, rank, ab_checklist))
-                legal = False
-            sp_legal, sp = self.validate_specialties(ab)
-            if not sp_legal:
-                legal = False
-            spec_total -= sp
-
-        print("Abilities left: {}".format(ab_checklist))
-        print("Specialties left: {}".format(spec_total))
-        if spec_total < 0:
-            legal = False
-
-        if not legal:
-            self.is_legal = False
-        return legal
-
-
 class NCTier3(utils.Character):
     def __init__(self, name="Ser Example", data=None, age=None):
         super().__init__(name, data, age)
@@ -385,6 +316,75 @@ class NCTier3(utils.Character):
             self.is_legal = False
         return legal
 
+
+class NCTier1(PlayerCharacter):
+    def __init__(self, name="Ser Example", data=None, age=None):
+        super().__init__(name, data, age)
+
+    def generate_abilities(self):
+        abilities = super().generate_abilities()
+        abilities["Experience"] = utils.roller(1) * 10
+        return abilities
+
+
+class NCTier2(NCTier3):
+    def __init__(self, name="Ser Example", data=None, age=None):
+        super().__init__(name, data, age)
+
+    def generate_abilities(self):
+        """Generate the ability and specialities points available to spend. Include handbook pages"""
+        status = utils.set_status()
+        abilities = {
+                "Abilities List": "p56",
+                "1 ability": 5,
+                "2 ablities": 4,
+                "4 abilities": 3,
+                "4 specialties": "half the ability rank (rounded down)",
+                "Status": status
+            }
+        return abilities
+
+    def validate_specialties(self, ability):
+        legal = True
+        total = 0
+        if type(ability) == dict:
+            for spec, val in ability:
+                if spec is not "Stat":
+                    total += 1
+                    rank = self.get_rank(ability)
+                    if val != math.floor(rank):
+                        print("{} at {} exceeds half of the {} rank of {}".format(spec, val, ability, rank))
+                        legal = False
+        return legal, total
+
+    def validate_abilities(self):
+        legal = True
+        ab_checklist = [5, 4, 4, 3, 3, 3, 3]
+        spec_total = 4
+
+        for ab in self.data["Abilities"]:
+            rank = self.get_rank(ab)
+            try:
+                ab_checklist.remove(rank)
+            except ValueError:
+                print("{} rank {} is not in checklist {}".format(ab, rank, ab_checklist))
+                legal = False
+            sp_legal, sp = self.validate_specialties(ab)
+            if not sp_legal:
+                legal = False
+            spec_total -= sp
+
+        print("Abilities left: {}".format(ab_checklist))
+        print("Specialties left: {}".format(spec_total))
+        if spec_total < 0:
+            legal = False
+
+        if not legal:
+            self.is_legal = False
+        return legal
+
+
     def validate_attributes(self):
         """This tier NC have no attributes to validate"""
         return True
+

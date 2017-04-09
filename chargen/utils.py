@@ -122,13 +122,10 @@ def age_to_val(age):
 
 
 class Character:
-    """The character class
+    """Class to be extended for specific use depending on the particular type of character needing to be represented
     
-    This class is designed to be subclassed for specific use depending on the particular
-    type of character that needs to be represented
-    
-    It provides a basic initialization and a few helper methods; it also defines abstract
-    methods that need implementation in subclasses
+    It provides a basic initialization and a few helper methods; it also defines abstract methods needing implementation
+    in subclasses
     
     Args:
         name (str): The name of the character.
@@ -149,7 +146,7 @@ class Character:
                 "Arms": None,
                 "Abilities": self.generate_abilities(),
                 "Attributes": self.generate_attributes(),
-                "Derived": self.generate_derived()
+                "Derived": self.calculate_derived()
             }
 
     def __str__(self):
@@ -175,7 +172,7 @@ class Character:
         else:
             return a["Stat"]
 
-    def generate_derived(self):
+    def calculate_derived(self):
         """Calculate the derived statistics (Combat and Intrigue Defense, Health, Composture)
 
         Returns:
@@ -225,7 +222,7 @@ class Character:
         
         The method updates the ``is_legal`` class attribute if needed
         """
-        derived = self.generate_derived()
+        derived = self.calculate_derived()
         if derived != self.data["Derived"]:
             self.is_legal = False
             print("Calculated derived statistics is {} instead of {}".format(derived, self.data["Derived"]))

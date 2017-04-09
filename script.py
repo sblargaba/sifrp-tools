@@ -1,7 +1,5 @@
 import argparse
-
 import yaml
-
 from chargen import classes
 
 if __name__ == "__main__":
