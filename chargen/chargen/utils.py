@@ -1,5 +1,3 @@
-#!/bin/env python
-
 import random
 import yaml
 import abc

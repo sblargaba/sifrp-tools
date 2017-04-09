@@ -84,7 +84,7 @@ class PlayerCharacter(utils.Character):
 
     def __init__(self, name="Ser Example", data=None, age=None):
         super().__init__(name, data, age)
-        self.data["Backgrounds"] = self.generate_bg()
+        self.data["Background"] = self.generate_bg()
 
     def generate_abilities(self):
         """Generate the ability and specialities points available to spend. Include handbook pages"""
@@ -118,7 +118,7 @@ class PlayerCharacter(utils.Character):
 
     def generate_bg(self):
         """Random generation of background informations"""
-        status = self.data["Abilities"]["Status"]
+        status = self.get_rank("Status")
         bg = {
             "Age": str(utils.ages[self.ageVal]),
             "Status": utils.statuses[status - 2],

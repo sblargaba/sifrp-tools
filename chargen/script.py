@@ -1,3 +1,5 @@
+#!/bin/env python
+
 import argparse
 import yaml
 from .chargen import classes
