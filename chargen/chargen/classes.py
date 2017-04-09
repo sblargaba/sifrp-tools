@@ -1,5 +1,5 @@
 import math
-from chargen import utils
+from . import utils
 
 
 class PlayerCharacter(utils.Character):
@@ -316,6 +316,10 @@ class NCTier3(utils.Character):
             self.is_legal = False
         return legal
 
+    def validate_attributes(self):
+        """This tier NC have no attributes to validate"""
+        return True
+
 
 class NCTier1(PlayerCharacter):
     def __init__(self, name="Ser Example", data=None, age=None):
@@ -382,9 +386,3 @@ class NCTier2(NCTier3):
         if not legal:
             self.is_legal = False
         return legal
-
-
-    def validate_attributes(self):
-        """This tier NC have no attributes to validate"""
-        return True
-
