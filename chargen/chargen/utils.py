@@ -135,8 +135,8 @@ class Character:
         self.name = name
         if data:
             self.data = data
-            self.ageVal = age_to_val(data["Background"]["Age"])
-            self.exp = data["Abillities"]["Experience"]
+            self.ageVal = age if age else age_to_val(data["Background"]["Age"])
+            self.exp = data["Abilities"]["Experience"]
         else:
             self.ageVal = age_to_val(age) if age is not None else set_age()
             self.data = {

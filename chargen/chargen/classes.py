@@ -273,8 +273,12 @@ class NCTier3(utils.Character):
         return abilities
 
     def generate_attributes(self):
-        """This Tier NC have no attributes to validate"""
-        return True
+        """This Tier NC have no attributes to Generate"""
+        return {
+            "Benefits": {},
+            "Destiny Points": 0,
+            "Drawbacks": {}
+        }
 
     def validate_specialties(self, ability):
         legal = True
